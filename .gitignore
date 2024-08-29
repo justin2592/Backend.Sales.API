@@ -1,0 +1,15 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/Backend.Sales.API/FileContentIndex
+/Backend.Sales.Infrastructure/bin/Debug/net8.0
+/Backend.Sales.Infrastructure/obj
+/Backend.Sales.Domain/bin/Debug/net8.0
+/Backend.Sales.Domain/obj
+/Backend.Sales.Application/bin/Debug/net8.0
+/Backend.Sales.Application/obj
+/Backend.Sales.API/bin/Debug/net8.0
+/Backend.Sales.API/obj
+/.vs
+/Backend.Sales.API/.vs
