@@ -22,8 +22,6 @@ public class UploadController : ControllerBase
     /// 4 - Order.</param>
     /// <returns>Returns a response indicating the success or failure of the operation.</returns>
     [HttpPost("upload/{fileType}")]
-    [SwaggerOperation(Summary = "Upload and process CSV file",
-                      Description = "Uploads a CSV file and processes it based on the specified entity type. Possible values for `fileType` are: 1 for Pizza, 2 for Order, 3 for OrderDetail, and 4 for PizzaType.")]
     [SwaggerResponse(200, "File uploaded and data inserted successfully.")]
     [SwaggerResponse(400, "No file uploaded.")]
     public async Task<IActionResult> UploadCsv(IFormFile file, EntityType fileType)
