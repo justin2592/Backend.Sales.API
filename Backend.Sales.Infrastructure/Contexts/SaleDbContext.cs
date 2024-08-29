@@ -32,37 +32,50 @@ public partial class SaleDbContext : DbContext, ISaleDbContext
     {
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.OrderId).HasName("PK__Order__C3905BCF7F19DBFF");
+            entity.HasKey(e => e.OrderId).HasName("PK__Order__C3905BCF6EAE6DA0");
 
             entity.ToTable("Order");
+
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.LastUpdatedBy).HasMaxLength(50);
+            entity.Property(e => e.LastUpdatedDate).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>
         {
-            entity.HasKey(e => e.OrderDetailId).HasName("PK__OrderDet__D3B9D36CF8676400");
+            entity.HasKey(e => e.OrderDetailId).HasName("PK__OrderDet__D3B9D36C24588DD5");
 
             entity.ToTable("OrderDetail");
 
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.LastUpdatedBy).HasMaxLength(50);
+            entity.Property(e => e.LastUpdatedDate).HasColumnType("datetime");
             entity.Property(e => e.PizzaId).HasMaxLength(50);
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Order__22751F6C");
+                .HasConstraintName("FK__OrderDeta__Order__5224328E");
 
             entity.HasOne(d => d.Pizza).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.PizzaId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Pizza__2180FB33");
+                .HasConstraintName("FK__OrderDeta__Pizza__51300E55");
         });
 
         modelBuilder.Entity<Pizza>(entity =>
         {
-            entity.HasKey(e => e.PizzaId).HasName("PK__Pizza__0B6012DD8757D2FA");
+            entity.HasKey(e => e.PizzaId).HasName("PK__Pizza__0B6012DD721A0A95");
 
             entity.ToTable("Pizza");
 
             entity.Property(e => e.PizzaId).HasMaxLength(50);
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.LastUpdatedBy).HasMaxLength(50);
+            entity.Property(e => e.LastUpdatedDate).HasColumnType("datetime");
             entity.Property(e => e.PizzaTypeId).HasMaxLength(50);
             entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Size).HasMaxLength(50);
@@ -70,17 +83,21 @@ public partial class SaleDbContext : DbContext, ISaleDbContext
             entity.HasOne(d => d.PizzaType).WithMany(p => p.Pizzas)
                 .HasForeignKey(d => d.PizzaTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Pizza__PizzaType__778AC167");
+                .HasConstraintName("FK__Pizza__PizzaType__531856C7");
         });
 
         modelBuilder.Entity<PizzaType>(entity =>
         {
-            entity.HasKey(e => e.PizzaTypeId).HasName("PK__PizzaTyp__126096801F5509F2");
+            entity.HasKey(e => e.PizzaTypeId).HasName("PK__PizzaTyp__1260968073326226");
 
             entity.ToTable("PizzaType");
 
             entity.Property(e => e.PizzaTypeId).HasMaxLength(50);
             entity.Property(e => e.Category).HasMaxLength(50);
+            entity.Property(e => e.CreatedBy).HasMaxLength(50);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.LastUpdatedBy).HasMaxLength(50);
+            entity.Property(e => e.LastUpdatedDate).HasColumnType("datetime");
             entity.Property(e => e.Name).HasMaxLength(100);
         });
 

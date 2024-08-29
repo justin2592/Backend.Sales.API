@@ -13,5 +13,13 @@ public partial class PizzaType
 
     public string Ingredients { get; set; } = null!;
 
+    public DateTime CreatedDate { get; set; }
+
+    public string CreatedBy { get; set; } = null!;
+
+    public DateTime LastUpdatedDate { get; set; }
+
+    public string LastUpdatedBy { get; set; } = null!;
+
     public virtual ICollection<Pizza> Pizzas { get; set; } = new List<Pizza>();
 }

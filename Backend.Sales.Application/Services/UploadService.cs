@@ -142,6 +142,11 @@ namespace Backend.Sales.Application.Services
             pizzaTable.Columns.Add("Size", typeof(string));
             pizzaTable.Columns.Add("Price", typeof(decimal));
 
+            pizzaTable.Columns.Add("CreatedBy", typeof(string));
+            pizzaTable.Columns.Add("CreatedDate", typeof(DateTime));
+            pizzaTable.Columns.Add("LastUpdatedBy", typeof(string));
+            pizzaTable.Columns.Add("LastUpdatedDate", typeof(string));
+
             // Populate the DataTable with data from the pizzas collection
             foreach (var pizza in pizzas)
             {
@@ -168,6 +173,11 @@ namespace Backend.Sales.Application.Services
             pizzaTypeTable.Columns.Add("Category", typeof(string));
             pizzaTypeTable.Columns.Add("Ingredients", typeof(string));
 
+            pizzaTypeTable.Columns.Add("CreatedBy", typeof(string));
+            pizzaTypeTable.Columns.Add("CreatedDate", typeof(DateTime));
+            pizzaTypeTable.Columns.Add("LastUpdatedBy", typeof(string));
+            pizzaTypeTable.Columns.Add("LastUpdatedDate", typeof(string));
+
             // Populate the DataTable with data from the pizzaTypes collection
             foreach (var pizzaType in pizzaTypes)
             {
@@ -192,6 +202,11 @@ namespace Backend.Sales.Application.Services
             orderTable.Columns.Add("OrderId", typeof(int));
             orderTable.Columns.Add("Date", typeof(DateTime));
             orderTable.Columns.Add("Time", typeof(TimeSpan));
+
+            orderTable.Columns.Add("CreatedBy", typeof(string));
+            orderTable.Columns.Add("CreatedDate", typeof(DateTime));
+            orderTable.Columns.Add("LastUpdatedBy", typeof(string));
+            orderTable.Columns.Add("LastUpdatedDate", typeof(string));
 
             // Populate the DataTable with data from the orders collection
             foreach (var order in orders)
@@ -220,6 +235,11 @@ namespace Backend.Sales.Application.Services
             orderDetailTable.Columns.Add("PizzaId", typeof(string));
             orderDetailTable.Columns.Add("Quantity", typeof(int));
             orderDetailTable.Columns.Add("OrderId", typeof(int));
+
+            orderDetailTable.Columns.Add("CreatedBy", typeof(string));
+            orderDetailTable.Columns.Add("CreatedDate", typeof(DateTime));
+            orderDetailTable.Columns.Add("LastUpdatedBy", typeof(string));
+            orderDetailTable.Columns.Add("LastUpdatedDate", typeof(string));
 
             // Populate the DataTable with data from the orderDetails collection
             foreach (var orderDetail in orderDetails)
