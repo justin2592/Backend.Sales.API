@@ -18,8 +18,8 @@ public class UploadController : ControllerBase
     /// Possible values:
     /// 1 - Pizza,
     /// 2 - PizzaType,
-    /// 3 - OrderDetail,
-    /// 4 - Order.</param>
+    /// 3 - Order,
+    /// 4 - OrderDetail.</param>
     /// <returns>Returns a response indicating the success or failure of the operation.</returns>
     [HttpPost("upload/{fileType}")]
     [SwaggerResponse(200, "File uploaded and data inserted successfully.")]

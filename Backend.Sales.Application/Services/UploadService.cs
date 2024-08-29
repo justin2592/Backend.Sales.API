@@ -1,15 +1,12 @@
 ﻿using Backend.Domain.Interface;
 using Backend.Sales.Application.Interface;
 using Backend.Sales.Application.Models;
-using Backend.Sales.Domain.Entities;
 using CsvHelper;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Data;
 using System.Globalization;
-using Entities = Backend.Sales.Domain.Entities;
 using Enums = Backend.Sales.Domain.Enumerations;
 
 namespace Backend.Sales.Application.Services
@@ -18,13 +15,15 @@ namespace Backend.Sales.Application.Services
     {
         private readonly ISaleDbContext _context;
         private readonly ILogger _logger;
+        private int _failed = 0;
+        private int _success = 0;
         public UploadService(ISaleDbContext context, ILogger<UploadService> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        public async Task<UploadResponse> ProcessCsvFileAsync(Stream csvStream, Enums.EntityType entityType, int chunkSize = 1000)
+        public async Task<UploadResponse> ProcessCsvFileAsync(Stream csvStream, Enums.EntityType entityType, int chunkSize = 2000)
         {
             using (var reader = new StreamReader(csvStream))
             using (var csv = new CsvReader(reader, new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture)))
@@ -50,9 +49,8 @@ namespace Backend.Sales.Application.Services
 
 
                 var records = new List<object>();
-                var rowIndex = 1; 
-                var failed = 0;
-                var totalRecords = 0;
+                var rowIndex = 1;
+                var count = 0;
 
                 while (await csv.ReadAsync())
                 {
@@ -63,19 +61,19 @@ namespace Backend.Sales.Application.Services
 
                         if (records.Count >= chunkSize)
                         {
-                            totalRecords += records.Count;
                             await InsertRecordsAsync(records, entityType);
                             records.Clear();
                         }
                     }
                     catch (Exception ex)
                     {
-                        failed += 1;
+                        _failed += 1;
                         var message = ex.InnerException?.Message ?? ex.Message;
                         _logger.LogError(ex, $"An error occurred while processing row {rowIndex}: {message}");
                     }
 
                     rowIndex++;
+                    count++;
                 }
 
                 // Process any remaining records
@@ -83,21 +81,20 @@ namespace Backend.Sales.Application.Services
                 {
                     try
                     {   
-                        totalRecords += records.Count;
                         await InsertRecordsAsync(records, entityType);
                     }
                     catch (Exception ex)
                     {
-                        failed += 1;
+                        _failed += 1;
                         var message = ex.InnerException?.Message ?? ex.Message;
                         _logger.LogError(ex, $"An error occurred while processing row {rowIndex}: {message}");
                     }
                 }
 
                 return new UploadResponse() { 
-                    TotalUploaded = totalRecords,
-                    TotalFailed = failed,
-                    TotalSuccess = totalRecords - failed
+                    TotalUploaded = count,
+                    TotalFailed = _failed,
+                    TotalSuccess = count - _failed
                 };
             }
         }
@@ -141,16 +138,33 @@ namespace Backend.Sales.Application.Services
             pizzaTable.Columns.Add("PizzaTypeId", typeof(string));
             pizzaTable.Columns.Add("Size", typeof(string));
             pizzaTable.Columns.Add("Price", typeof(decimal));
-
             pizzaTable.Columns.Add("CreatedBy", typeof(string));
             pizzaTable.Columns.Add("CreatedDate", typeof(DateTime));
             pizzaTable.Columns.Add("LastUpdatedBy", typeof(string));
-            pizzaTable.Columns.Add("LastUpdatedDate", typeof(string));
+            pizzaTable.Columns.Add("LastUpdatedDate", typeof(DateTime));
 
-            // Populate the DataTable with data from the pizzas collection
+            // Fetch existing PizzaTypeIds from the database
+            var existingPizzaTypeIds = await _context.PizzaTypes
+                .Select(pt => pt.PizzaTypeId)
+                .ToListAsync(); // Fetch the records as a list
+
+            var existingPizzaTypeIdSet = new HashSet<string>(existingPizzaTypeIds); // Convert the list to a HashSet
+
+            // Create a list to keep track of records that failed to be inserted
+            var failedRecords = new List<Models.PizzaCsvModel>();
+
             foreach (var pizza in pizzas)
             {
-                pizzaTable.Rows.Add(pizza.PizzaId, pizza.PizzaTypeId, pizza.Size, pizza.Price);
+                if (existingPizzaTypeIdSet.Contains(pizza.PizzaTypeId))
+                {
+                    // Add valid records to the DataTable
+                    pizzaTable.Rows.Add(pizza.PizzaId, pizza.PizzaTypeId, pizza.Size, pizza.Price);
+                }
+                else
+                {
+                    // Track the failed records
+                    failedRecords.Add(pizza);
+                }
             }
 
             // Create a SqlParameter for the TVP
@@ -160,10 +174,14 @@ namespace Backend.Sales.Application.Services
                 Value = pizzaTable
             };
 
-            // Execute the stored procedure
-            await _context.ExecuteSqlRawAsync("EXEC InsertPizzas @PizzaTable", pizzaTableParam);
-        }
+            // Execute the stored procedure if there are any valid records to insert
+            if (pizzaTable.Rows.Count > 0)
+            {
+                await _context.ExecuteSqlRawAsync("EXEC InsertPizzas @PizzaTable", pizzaTableParam);
+            }
 
+           _failed += failedRecords.Count;
+        }
         private async Task InsertPizzaTypesAsync(IEnumerable<Models.PizzaTypeCsvModel> pizzaTypes)
         {
             // Create a DataTable that matches the structure of dbo.PizzaTypeTableType
@@ -227,6 +245,7 @@ namespace Backend.Sales.Application.Services
             await _context.ExecuteSqlRawAsync("EXEC InsertOrders @OrderTable", orderTableParam);
         }
 
+
         private async Task InsertOrderDetailsAsync(IEnumerable<Models.OrderDetailCsvModel> orderDetails)
         {
             // Create a DataTable that matches the structure of dbo.OrderDetailTableType
@@ -235,16 +254,38 @@ namespace Backend.Sales.Application.Services
             orderDetailTable.Columns.Add("PizzaId", typeof(string));
             orderDetailTable.Columns.Add("Quantity", typeof(int));
             orderDetailTable.Columns.Add("OrderId", typeof(int));
-
             orderDetailTable.Columns.Add("CreatedBy", typeof(string));
             orderDetailTable.Columns.Add("CreatedDate", typeof(DateTime));
             orderDetailTable.Columns.Add("LastUpdatedBy", typeof(string));
-            orderDetailTable.Columns.Add("LastUpdatedDate", typeof(string));
+            orderDetailTable.Columns.Add("LastUpdatedDate", typeof(DateTime));
 
-            // Populate the DataTable with data from the orderDetails collection
+            // Create a list to keep track of records that failed to be inserted
+            var failedRecords = new List<Models.OrderDetailCsvModel>();
+            // Fetch existing OrderId and PizzaId from the database
+            var existingPizzaRecords = await _context.Pizzas
+                .Select(p => p.PizzaId)
+                .ToListAsync(); // Fetch the records as a list
+
+            var existingPizzaRecordSet = new HashSet<string>(existingPizzaRecords); // Convert the list to a HashSet
+
+            var existingOrderRecords = await _context.Orders
+                .Select(o => o.OrderId)
+                .ToListAsync(); // Fetch the records as a list
+
+            var existingOrderRecordSet = new HashSet<int>(existingOrderRecords); // Convert the list to a HashSet
+
             foreach (var orderDetail in orderDetails)
             {
-                orderDetailTable.Rows.Add(orderDetail.PizzaId, orderDetail.Quantity, orderDetail.OrderId);
+                if (existingPizzaRecordSet.Contains(orderDetail.PizzaId) && existingOrderRecordSet.Contains(orderDetail.OrderId))
+                {
+                    // Add valid records to the DataTable
+                    orderDetailTable.Rows.Add(orderDetail.OrderDetailId, orderDetail.PizzaId, orderDetail.Quantity, orderDetail.OrderId);
+                }
+                else
+                {
+                    // Track the failed records
+                    failedRecords.Add(orderDetail);
+                }
             }
 
             // Create a SqlParameter for the TVP
@@ -256,6 +297,9 @@ namespace Backend.Sales.Application.Services
 
             // Execute the stored procedure
             await _context.ExecuteSqlRawAsync("EXEC InsertOrderDetails @OrderDetailTable", orderDetailTableParam);
+
+            // Set the count of failed records
+            _failed += failedRecords.Count;
         }
     }
 }

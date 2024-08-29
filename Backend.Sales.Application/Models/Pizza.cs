@@ -8,8 +8,8 @@ namespace Backend.Sales.Application.Models
 {
     public class Pizza
     {
-        public int PizzaId { get; set; }
-        public int PizzaTypeId { get; set; }
+        public string PizzaId { get; set; }
+        public string PizzaTypeId { get; set; }
         public string Size { get; set; }
         public decimal Price { get; set; }
 

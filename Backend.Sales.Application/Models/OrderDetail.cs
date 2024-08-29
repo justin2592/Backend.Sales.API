@@ -9,7 +9,7 @@ namespace Backend.Sales.Application.Models
     public class OrderDetail
     {
         public int OrderDetailId { get; set; }
-        public int PizzaId { get; set; }
+        public string PizzaId { get; set; }
         public string Size { get; set; }
         public decimal Price { get; set; }
         public int OrderId { get; set; }
