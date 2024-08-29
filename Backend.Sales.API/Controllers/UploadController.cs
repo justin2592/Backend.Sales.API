@@ -35,9 +35,8 @@ public class UploadController : ControllerBase
 
         using (var stream = file.OpenReadStream())
         {
-            await _uploadService.ProcessCsvFileAsync(stream, fileType);
+            var result =  await _uploadService.ProcessCsvFileAsync(stream, fileType);
+            return Ok(result);
         }
-
-        return Ok("File uploaded and data inserted successfully.");
     }
 }

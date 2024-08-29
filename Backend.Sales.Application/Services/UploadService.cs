@@ -14,7 +14,7 @@ using Enums = Backend.Sales.Domain.Enumerations;
 
 namespace Backend.Sales.Application.Services
 {
-    public class UploadService: IUploadService
+    public class UploadService : IUploadService
     {
         private readonly ISaleDbContext _context;
         private readonly ILogger _logger;
@@ -24,87 +24,112 @@ namespace Backend.Sales.Application.Services
             _logger = logger;
         }
 
-        public async Task ProcessCsvFileAsync(Stream csvStream, Enums.EntityType entityType)
+        public async Task<UploadResponse> ProcessCsvFileAsync(Stream csvStream, Enums.EntityType entityType, int chunkSize = 1000)
         {
             using (var reader = new StreamReader(csvStream))
             using (var csv = new CsvReader(reader, new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture)))
             {
                 // Register the appropriate map based on entity type
-                try
+                switch (entityType)
                 {
-                    switch (entityType)
-                    {
-                        case Enums.EntityType.Pizza:
-                            csv.Context.RegisterClassMap<PizzaCsvModelMap>();
-                            break;
-                        case Enums.EntityType.PizzaType:
-                            csv.Context.RegisterClassMap<PizzaTypeCsvModelMap>();
-                            break;
-                        case Enums.EntityType.OrderDetail:
-                            csv.Context.RegisterClassMap<OrderDetailCsvModelMap>();
-                            break;
-                        case Enums.EntityType.Order:
-                            csv.Context.RegisterClassMap<OrderCsvModelMap>();
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "An error occurred while processing the request");
+                    case Enums.EntityType.Pizza:
+                        csv.Context.RegisterClassMap<PizzaCsvModelMap>();
+                        break;
+                    case Enums.EntityType.PizzaType:
+                        csv.Context.RegisterClassMap<PizzaTypeCsvModelMap>();
+                        break;
+                    case Enums.EntityType.OrderDetail:
+                        csv.Context.RegisterClassMap<OrderDetailCsvModelMap>();
+                        break;
+                    case Enums.EntityType.Order:
+                        csv.Context.RegisterClassMap<OrderCsvModelMap>();
+                        break;
+                    default:
+                        throw new ArgumentException("Invalid entity type.");
                 }
 
-                var rowIndex = 1; // Assuming the first row is headers, start counting from 1
+
+                var records = new List<object>();
+                var rowIndex = 1; 
+                var failed = 0;
+                var totalRecords = 0;
 
                 while (await csv.ReadAsync())
                 {
                     try
                     {
-                        await InsertRecordAsync(csv, entityType);
+                        var record = GetRecord(csv, entityType);
+                        records.Add(record);
+
+                        if (records.Count >= chunkSize)
+                        {
+                            totalRecords += records.Count;
+                            await InsertRecordsAsync(records, entityType);
+                            records.Clear();
+                        }
                     }
                     catch (Exception ex)
                     {
-                        var message = "";
-                        if (ex.InnerException != null)
-                        {
-                            message += ex.InnerException.Message;
-                        }
-
-                        message += ex.Message;
-
-                        _logger.LogError(ex, message);
+                        failed += 1;
+                        var message = ex.InnerException?.Message ?? ex.Message;
+                        _logger.LogError(ex, $"An error occurred while processing row {rowIndex}: {message}");
                     }
 
                     rowIndex++;
                 }
+
+                // Process any remaining records
+                if (records.Count > 0)
+                {
+                    try
+                    {   
+                        totalRecords += records.Count;
+                        await InsertRecordsAsync(records, entityType);
+                    }
+                    catch (Exception ex)
+                    {
+                        failed += 1;
+                        var message = ex.InnerException?.Message ?? ex.Message;
+                        _logger.LogError(ex, $"An error occurred while processing row {rowIndex}: {message}");
+                    }
+                }
+
+                return new UploadResponse() { 
+                    TotalUploaded = totalRecords,
+                    TotalFailed = failed,
+                    TotalSuccess = totalRecords - failed
+                };
             }
         }
 
-        private async Task InsertRecordAsync(CsvReader csv, Enums.EntityType entityType)
+        private object GetRecord(CsvReader csv, Enums.EntityType entityType)
+        {
+            return entityType switch
+            {
+                Enums.EntityType.Pizza => csv.GetRecord<PizzaCsvModel>(),
+                Enums.EntityType.PizzaType => csv.GetRecord<PizzaTypeCsvModel>(),
+                Enums.EntityType.Order => csv.GetRecord<OrderCsvModel>(),
+                Enums.EntityType.OrderDetail => csv.GetRecord<OrderDetailCsvModel>(),
+                _ => throw new ArgumentException("Invalid entity type.")
+            };
+        }
+
+        private async Task InsertRecordsAsync(List<object> records, Enums.EntityType entityType)
         {
             switch (entityType)
             {
                 case Enums.EntityType.Pizza:
-                    var pizzaRecord = csv.GetRecord<Models.PizzaCsvModel>();
-                    await InsertPizzasAsync(new List<Models.PizzaCsvModel> { pizzaRecord });
+                    await InsertPizzasAsync(records.Cast<PizzaCsvModel>());
                     break;
-
                 case Enums.EntityType.PizzaType:
-                    var pizzaTypeRecord = csv.GetRecord<Models.PizzaTypeCsvModel>();
-                    await InsertPizzaTypesAsync(new List<Models.PizzaTypeCsvModel> { pizzaTypeRecord });
+                    await InsertPizzaTypesAsync(records.Cast<PizzaTypeCsvModel>());
                     break;
-
                 case Enums.EntityType.Order:
-                    var orderRecord = csv.GetRecord<Models.OrderCsvModel>();
-                    await InsertOrdersAsync(new List<Models.OrderCsvModel> { orderRecord });
+                    await InsertOrdersAsync(records.Cast<OrderCsvModel>());
                     break;
-
                 case Enums.EntityType.OrderDetail:
-                    var orderDetailRecord = csv.GetRecord<Models.OrderDetailCsvModel>();
-                    await InsertOrderDetailsAsync(new List<Models.OrderDetailCsvModel> { orderDetailRecord });
+                    await InsertOrderDetailsAsync(records.Cast<OrderDetailCsvModel>());
                     break;
-
-                default:
-                    throw new ArgumentException("Invalid file type.");
             }
         }
 
