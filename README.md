@@ -9,10 +9,6 @@ To get started, clone the repository using the following command:
 ```bash
 git clone https://github.com/justin2592/Backend.Sales.API.git
 
-
-Here's a README.md file tailored for your project:
-
-markdown
 Copy code
 # Backend Sales API
 
