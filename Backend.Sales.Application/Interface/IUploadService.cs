@@ -1,4 +1,5 @@
-﻿using Backend.Sales.Domain.Enumerations;
+﻿using Backend.Sales.Application.Models;
+using Backend.Sales.Domain.Enumerations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,6 @@ namespace Backend.Sales.Application.Interface
 {
     public interface IUploadService
     {
-        Task ProcessCsvFileAsync(Stream csvStream, EntityType entityType);
+        Task<UploadResponse> ProcessCsvFileAsync(Stream csvStream, EntityType entityType, int chunkSize = 1000);
     }
 }
