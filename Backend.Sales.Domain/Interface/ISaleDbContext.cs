@@ -15,6 +15,6 @@ namespace Backend.Domain.Interface
         public DbSet<Pizza> Pizzas { get; set; }
 
         public DbSet<PizzaType> PizzaTypes { get; set; }
-        public Task<int> SaveChangesAsync();
+        Task<int> ExecuteSqlRawAsync(string sql, params object[] parameters);
     }
 }

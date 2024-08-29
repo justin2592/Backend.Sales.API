@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CsvHelper.Configuration.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,6 +34,7 @@ namespace Backend.Sales.Application.Models
     public class OrderCsvModel
     {
         public int OrderId { get; set; }
+        [Format("yyyy-MM-dd")]
         public DateOnly Date { get; set; }
         public TimeOnly Time { get; set; }
     }

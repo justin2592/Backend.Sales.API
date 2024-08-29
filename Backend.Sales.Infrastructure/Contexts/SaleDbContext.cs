@@ -32,14 +32,14 @@ public partial class SaleDbContext : DbContext, ISaleDbContext
     {
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.OrderId).HasName("PK__Order__C3905BCF07925EB0");
+            entity.HasKey(e => e.OrderId).HasName("PK__Order__C3905BCF7F19DBFF");
 
             entity.ToTable("Order");
         });
 
         modelBuilder.Entity<OrderDetail>(entity =>
         {
-            entity.HasKey(e => e.OrderDetailId).HasName("PK__OrderDet__D3B9D36C70FB327B");
+            entity.HasKey(e => e.OrderDetailId).HasName("PK__OrderDet__D3B9D36CF8676400");
 
             entity.ToTable("OrderDetail");
 
@@ -48,17 +48,17 @@ public partial class SaleDbContext : DbContext, ISaleDbContext
             entity.HasOne(d => d.Order).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Order__5629CD9C");
+                .HasConstraintName("FK__OrderDeta__Order__22751F6C");
 
             entity.HasOne(d => d.Pizza).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.PizzaId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__OrderDeta__Pizza__5535A963");
+                .HasConstraintName("FK__OrderDeta__Pizza__2180FB33");
         });
 
         modelBuilder.Entity<Pizza>(entity =>
         {
-            entity.HasKey(e => e.PizzaId).HasName("PK__Pizza__0B6012DD687A8520");
+            entity.HasKey(e => e.PizzaId).HasName("PK__Pizza__0B6012DD8757D2FA");
 
             entity.ToTable("Pizza");
 
@@ -70,12 +70,12 @@ public partial class SaleDbContext : DbContext, ISaleDbContext
             entity.HasOne(d => d.PizzaType).WithMany(p => p.Pizzas)
                 .HasForeignKey(d => d.PizzaTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Pizza__PizzaType__5070F446");
+                .HasConstraintName("FK__Pizza__PizzaType__778AC167");
         });
 
         modelBuilder.Entity<PizzaType>(entity =>
         {
-            entity.HasKey(e => e.PizzaTypeId).HasName("PK__PizzaTyp__12609680987510CF");
+            entity.HasKey(e => e.PizzaTypeId).HasName("PK__PizzaTyp__126096801F5509F2");
 
             entity.ToTable("PizzaType");
 
@@ -89,7 +89,8 @@ public partial class SaleDbContext : DbContext, ISaleDbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 
-    public async Task<int> SaveChangesAsync() {
-        return await base.SaveChangesAsync();
+    public async Task<int> ExecuteSqlRawAsync(string sql, params object[] parameters)
+    {
+        return await Database.ExecuteSqlRawAsync(sql, parameters);
     }
 }
