@@ -42,10 +42,25 @@ curl -X 'POST' \
   -H 'accept: */*' \
   -H 'Content-Type: multipart/form-data' \
   -H 'SMS-API-KEY: 6308f3d6-8ff7-4dea-99fd-82b54c2fbc97' \
-  -F 'file=@path/to/your/file.csv'
+  -F 'file=@/path/to/your/pizza.csv'
 
 API Key Authentication
 To interact with the API, include the SMS-API-KEY header in your requests. The API key used in the example is 6308f3d6-8ff7-4dea-99fd-82b54c2fbc97.
+
+**Uploading Files**
+To upload files, you can use tools like Postman or Thunder Client, or any HTTP client that supports multipart form-data.
+
+**Using Postman**
+Set the request type to POST.
+Enter the URL: https://localhost:7213/upload/{fileType}
+In the Headers section, add:
+accept: */*
+Content-Type: multipart/form-data
+SMS-API-KEY: {your-api-key}
+In the Body section:
+Select form-data
+Set the key as file and type as File.
+Upload the file from Backend.Sales.API\CSV.
 
 Troubleshooting
 If you encounter any issues:
